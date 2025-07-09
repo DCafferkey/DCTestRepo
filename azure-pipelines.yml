@@ -3,31 +3,44 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
-trigger:
-- main
+trigger: none
 
 schedules:
 - cron: "0 2 * * *" # Runs at 2:00 AM UTC every day
-  displayName: Nightly build
+  displayName: "Nightly build"
   branches:
     include:
     - main
+  always: true
 
 variables:
-  sqlServerName: '$(SQL_SERVER_NAME)'      # Set in pipeline variables or variable group
-  sqlDatabaseName: '$(SQL_DATABASE_NAME)'  # Set in pipeline variables or variable group
-  sqlUser: '$(SQL_USER)'                   # Set in pipeline variables or variable group
-  sqlPassword: '$(SQL_PASSWORD)'           # Set in pipeline variables or variable group
-  scriptsFolder: './scripts/updates'       # Adjust as needed
+  sqlServerName: '$(SQL_SERVER_NAME)'
+  sqlDatabaseName: '$(SQL_DATABASE_NAME)'
+  sqlUser: '$(SQL_USER)'
+  sqlPassword: '$(SQL_PASSWORD)'
+  scriptsFolder: '$(DacPacPath)'
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'windows-latest'
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
-
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+stages:
+  - stage: GetDacPac
+    displayName: "Extract Dacpac file from database"
+    jobs:
+      - job: Export
+        steps:
+          #- task: SqlAzureDacpacExport@1  - this is not available, but would be good to install
+          - task: PowerShell@2
+            displayName: "Extract DacPac using SqlPackage via Powershell"
+            inputs:
+              targetType: 'inline'
+              script: |
+                Write-Host "Extracting DACPAC."
+                sqlpackage /Action:Export `
+                  /SourceServerName:$(SQL_SERVER_NAME) `
+                  /SourceDatabasename:$(SQL_DATABASE_NAME) `
+                  /SourceUser:$(SQL_USER) `
+                  /SourcePassword:$(SQL_PASSWORD) `
+                  /targetFile:$(DacPacPath) `
+          - publish: '$(Build.ActiveStagingDirectory)'
+            artifact: dacpac
