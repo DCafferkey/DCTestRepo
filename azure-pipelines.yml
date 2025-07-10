@@ -27,20 +27,46 @@ stages:
   - stage: GetDacPac
     displayName: "Extract Dacpac file from database"
     jobs:
-      - job: Export
-        steps:
+      #- job: Export
+       # steps:
           #- task: SqlAzureDacpacExport@1  - this is not available, but would be good to install
-          - task: PowerShell@2
-            displayName: "Extract DacPac using SqlPackage via Powershell"
+        #  - task: PowerShell@2
+        #    displayName: "Extract DacPac using SqlPackage via Powershell"
+        #    inputs:
+        #      targetType: 'inline'
+        #      script: |
+        #        Write-Host "Extracting DACPAC."
+        #        sqlpackage /Action:Export `
+        #          /SourceServerName:$(SQL_SERVER_NAME) `
+        #          /SourceDatabasename:$(SQL_DATABASE_NAME) `
+        #          /SourceUser:$(SQL_USER) `
+        #          /SourcePassword:$(SQL_PASSWORD) `
+        #          /targetFile:$(DacPacPath) `
+        #  - publish: '$(Build.ActiveStagingDirectory)'
+        #    artifact: dacpac
+      - job: Build
+        steps:
+          - task: UseDotNet@2
             inputs:
-              targetType: 'inline'
-              script: |
-                Write-Host "Extracting DACPAC."
-                sqlpackage /Action:Export `
-                  /SourceServerName:$(SQL_SERVER_NAME) `
-                  /SourceDatabasename:$(SQL_DATABASE_NAME) `
-                  /SourceUser:$(SQL_USER) `
-                  /SourcePassword:$(SQL_PASSWORD) `
-                  /targetFile:$(DacPacPath) `
-          - publish: '$(Build.ActiveStagingDirectory)'
-            artifact: dacpac
+              packageType: 'sdk'
+              version: '6.x'
+              installationPath: $(Agent.ToolsDirectory)/dotnet
+
+          - task: NuGetAuthenticate@1
+
+          - task: NuGetCommand@2
+            inputs:
+              restoreSolution: '$(solution)'
+
+          - task: VSBuild@1
+            displayName: 'Build SQL project'
+            inputs:
+              solution: '$(solution)'
+              msbuildArgs: '/p:Configuration=$(configuration)'
+              platform: 'Any CPU'
+              configuration: '$(configuration)'
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: '**/bin/$(configuration)/*.dacpac'
+              artifactname: dacpac
