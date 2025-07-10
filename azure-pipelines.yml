@@ -13,21 +13,9 @@ schedules:
     include:
     - main
 
-variables:
-  sqlServerName: '$(SQL_SERVER_NAME)'      # Set in pipeline variables or variable group
-  sqlDatabaseName: '$(SQL_DATABASE_NAME)'  # Set in pipeline variables or variable group
-  sqlUser: '$(SQL_USER)'                   # Set in pipeline variables or variable group
-  sqlPassword: '$(SQL_PASSWORD)'           # Set in pipeline variables or variable group
-  scriptsFolder: './scripts/updates'       # Adjust as needed
-
 pool:
   vmImage: ubuntu-latest
 
 steps:
 - script: echo Hello, world!
   displayName: 'Run a one-line script'
-
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
