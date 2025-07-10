@@ -46,27 +46,38 @@ stages:
         #    artifact: dacpac
       - job: Build
         steps:
-          - task: UseDotNet@2
-            inputs:
-              packageType: 'sdk'
-              version: '6.x'
-              installationPath: $(Agent.ToolsDirectory)/dotnet
+        - checkout: self
+        - script: |
+            echo "test"
+            dir "$(Build.SourcesDirectory)" /s
+          displayName: 'List repo files'
 
-          - task: NuGetAuthenticate@1
+        - task: VSBuild@1
+          inputs:
+            solution: '**/DW_DUOS.sln'
+            msbuildArgs: '/p:Configuration=Release'
+            
+      #     - task: UseDotNet@2
+      #       inputs:
+      #         packageType: 'sdk'
+      #         version: '6.x'
+      #         installationPath: $(Agent.ToolsDirectory)/dotnet
 
-          - task: NuGetCommand@2
-            inputs:
-              restoreSolution: '$(solution)'
+      #     - task: NuGetAuthenticate@1
 
-          - task: VSBuild@1
-            displayName: 'Build SQL project'
-            inputs:
-              solution: '$(solution)'
-              msbuildArgs: '/p:Configuration=$(configuration)'
-              platform: 'Any CPU'
-              configuration: '$(configuration)'
+      #     - task: NuGetCommand@2
+      #       inputs:
+      #         restoreSolution: '$(solution)'
 
-          - task: PublishBuildArtifacts@1
-            inputs:
-              PathtoPublish: '**/bin/$(configuration)/*.dacpac'
-              artifactname: dacpac
+      #     - task: VSBuild@1
+      #       displayName: 'Build SQL project'
+      #       inputs:
+      #         solution: '$(solution)'
+      #         msbuildArgs: '/p:Configuration=$(configuration)'
+      #         platform: 'Any CPU'
+      #         configuration: '$(configuration)'
+
+      #     - task: PublishBuildArtifacts@1
+      #       inputs:
+      #         PathtoPublish: '**/bin/$(configuration)/*.dacpac'
+      #         artifactname: dacpac
